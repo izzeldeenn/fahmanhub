@@ -24,18 +24,24 @@ export default function Home() {
           : 'bg-black border-l border-gray-800'
       }`}>
         <div className="flex justify-between items-start mb-8">
-          <Logo />
+        <Logo />
+        <div className="flex items-center -mt-8 -mr-8">
           <ThemeToggle />
         </div>
+      </div>
         <CurrentUserSelector />
         <UserRankings />
       </div>
       
       {/* Right section - 3/4 width */}
       <div className="w-3/4 flex items-center justify-center p-8 relative">
-        <div className="absolute top-4 left-4 flex items-center space-x-4 space-x-reverse z-20">
-          <CoinsButton />
-          <UserProfile />
+        <div className="absolute top-4 left-4 flex items-center space-x-2 space-x-reverse z-20">
+          <div className="scale-75">
+            <CoinsButton />
+          </div>
+          <div className="scale-75">
+            <UserProfile />
+          </div>
         </div>
         <TimerSelector />
       </div>

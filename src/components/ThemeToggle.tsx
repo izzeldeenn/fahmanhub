@@ -1,30 +1,55 @@
 'use client';
 
 import { useTheme } from '@/contexts/ThemeContext';
-import styles from './ThemeToggle.module.css';
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <label className={styles.switch}>
-      <input
-        checked={theme === 'dark'}
-        onChange={toggleTheme}
-        type="checkbox"
-      />
-      <span className={styles.slider}>
-        <div className={styles.star_1}></div>
-        <div className={styles.star_2}></div>
-        <div className={styles.star_3}></div>
-        <svg viewBox="0 0 16 16" className={styles.cloud_1}>
-          <path
-            transform="matrix(.77976 0 0 .78395-299.99-418.63)"
-            fill="#fff"
-            d="m391.84 540.91c-.421-.329-.949-.524-1.523-.524-1.351 0-2.451 1.084-2.485 2.435-1.395.526-2.388 1.88-2.388 3.466 0 1.874 1.385 3.423 3.182 3.667v.034h12.73v-.006c1.775-.104 3.182-1.584 3.182-3.395 0-1.747-1.309-3.186-2.994-3.379.007-.106.011-.214.011-.322 0-2.707-2.271-4.901-5.072-4.901-2.073 0-3.856 1.202-4.643 2.925"
-          ></path>
-        </svg>
-      </span>
-    </label>
+    <div
+      className={`w-48 aspect-video rounded-xl border-4 border-[#121331] scale-40 ${
+        theme === 'dark' ? 'bg-[#ebe6ef]' : 'bg-[#ebe6ef]'
+      }`}
+    >
+      <div className="flex h-full w-full px-2 items-center gap-x-2">
+        <div
+          className="w-6 h-6 flex-shrink-0 rounded-full border-4 border-[#121331]"
+        ></div>
+        <label
+          className={`w-full h-10 border-4 border-[#121331] rounded cursor-pointer ${
+            theme === 'dark' ? 'scale-x-[-1]' : ''
+          }`}
+        >
+          <input 
+            type="checkbox" 
+            checked={theme === 'dark'}
+            onChange={toggleTheme}
+            className="hidden" 
+          />
+          <div className={`w-full h-full relative ${
+            theme === 'dark' ? 'bg-[#f24c00]' : 'bg-[#f24c00]'
+          }`}>
+            <div
+              className="w-0 h-0 z-20 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-t-[20px] border-t-[#121331] relative"
+            >
+              <div
+                className="w-0 h-0 absolute border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[15px] border-t-[#e44901] -top-5 -left-[18px]"
+              ></div>
+            </div>
+            <div
+              className={`w-[24px] h-9 z-10 absolute top-[9px] left-0 border-r-2 border-b-4 border-[#121331] transform skew-y-[39deg] ${
+                theme === 'dark' ? 'bg-[#f24c00]' : 'bg-[#f24c00]'
+              }`}
+            ></div>
+            <div
+              className={`w-[25px] h-9 z-10 absolute top-[9px] left-[24px] border-r-4 border-l-2 border-b-4 border-[#121331] transform skew-y-[-39deg] ${
+                theme === 'dark' ? 'bg-[#c44002]' : 'bg-[#c44002]'
+              }`}
+            ></div>
+          </div>
+        </label>
+        <div className="w-6 h-1 flex-shrink-0 bg-[#121331] rounded-full"></div>
+      </div>
+    </div>
   );
 }

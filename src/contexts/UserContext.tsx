@@ -153,32 +153,42 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUsers([...demoDevices, currentDevice]);
   };
 
-  const saveDeviceToDatabase = async (device: DeviceUser) => {
+  const saveDeviceToDatabase = async (deviceUser: DeviceUser) => {
     try {
+      // Check if Supabase is properly configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://your-project.supabase.co') {
+        return; // Silently skip if not configured
+      }
+
       const { error } = await supabase
         .from('devices')
         .upsert({
-          id: device.deviceId,
-          name: device.name,
-          avatar: device.avatar,
-          score: device.score,
-          rank: device.rank,
-          study_time: device.studyTime,
-          created_at: device.createdAt,
-          last_active: device.lastActive,
-          device_info: getDeviceInfo()
+          id: deviceUser.deviceId,
+          name: deviceUser.name,
+          avatar: deviceUser.avatar,
+          score: deviceUser.score,
+          rank: deviceUser.rank,
+          study_time: deviceUser.studyTime,
+          created_at: deviceUser.createdAt,
+          last_active: deviceUser.lastActive
         });
 
-      if (error) {
-        console.error('Error saving device:', error);
+      // Only log errors that have actual content
+      if (error && error.message) {
+        console.error('Error saving device:', error.message);
       }
     } catch (error) {
-      console.error('Database save error:', error);
+      // Silently handle database errors when not configured
     }
   };
 
   const updateDeviceInDatabase = async (deviceId: string, updates: Partial<DeviceUser>) => {
     try {
+      // Check if Supabase is properly configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://your-project.supabase.co') {
+        return; // Silently skip if not configured
+      }
+
       const { error } = await supabase
         .from('devices')
         .update({
@@ -187,11 +197,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
         })
         .eq('id', deviceId);
 
-      if (error) {
-        console.error('Error updating device:', error);
+      // Only log errors that have actual content
+      if (error && error.message) {
+        console.error('Error updating device:', error.message);
       }
     } catch (error) {
-      console.error('Database update error:', error);
+      // Silently handle database errors when not configured
     }
   };
 

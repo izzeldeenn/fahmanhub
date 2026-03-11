@@ -73,101 +73,103 @@ export function UserRankings() {
       <h2 className={`text-xl font-bold mb-4 text-center ${
         theme === 'light' ? 'text-black' : 'text-white'
       }`}>الترتيب</h2>
-      <div className="space-y-2">
-        {displayUsers.length === 0 ? (
-          <p className={`text-center py-8 ${
-            theme === 'light' ? 'text-gray-500' : 'text-gray-400'
-          }`}>
-            لا يوجد أجهزة بعد
-          </p>
-        ) : (
-          displayUsers.map((user) => {
-            const todaySeconds = getTodayStudyTime(user);
-            const todayTimeFormatted = formatStudyTime(todaySeconds);
-            const todayCoins = getCoinsFromStudyTime(todaySeconds);
-            const userIsActive = isCurrentUserActive(user);
-            
-            return (
-              <div
-                key={user.deviceId}
-                className={`p-3 border rounded-lg transition-all duration-300 ${
-                  user.rank === 1
-                    ? theme === 'light' 
-                      ? 'border-yellow-500 bg-yellow-50'
-                      : 'border-yellow-600 bg-yellow-900/20'
-                    : user.rank === 2
-                    ? theme === 'light'
-                      ? 'border-gray-400 bg-gray-50'
-                      : 'border-gray-500 bg-gray-700/50'
-                    : user.rank === 3
-                    ? theme === 'light'
-                      ? 'border-orange-400 bg-orange-50'
-                      : 'border-orange-600 bg-orange-900/20'
-                    : theme === 'light'
-                      ? 'border-gray-300 bg-white'
-                      : 'border-gray-600 bg-black'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-3">
-                    <span className={`font-bold text-lg w-6 ${
-                      theme === 'light' ? 'text-black' : 'text-white'
-                    }`}>{user.rank}</span>
-                    <span className="text-lg">{user.avatar || '👤'}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className={`font-medium ${
+      <div className="h-96 overflow-y-auto border rounded-lg p-2">
+        <div className="space-y-2">
+          {displayUsers.length === 0 ? (
+            <p className={`text-center py-8 ${
+              theme === 'light' ? 'text-gray-500' : 'text-gray-400'
+            }`}>
+              لا يوجد أجهزة بعد
+            </p>
+          ) : (
+            displayUsers.map((user) => {
+              const todaySeconds = getTodayStudyTime(user);
+              const todayTimeFormatted = formatStudyTime(todaySeconds);
+              const todayCoins = getCoinsFromStudyTime(todaySeconds);
+              const userIsActive = isCurrentUserActive(user);
+              
+              return (
+                <div
+                  key={user.deviceId}
+                  className={`p-3 border rounded-lg transition-all duration-300 ${
+                    user.rank === 1
+                      ? theme === 'light' 
+                        ? 'border-yellow-500 bg-yellow-50'
+                        : 'border-yellow-600 bg-yellow-900/20'
+                      : user.rank === 2
+                      ? theme === 'light'
+                        ? 'border-gray-400 bg-gray-50'
+                        : 'border-gray-500 bg-gray-700/50'
+                      : user.rank === 3
+                      ? theme === 'light'
+                        ? 'border-orange-400 bg-orange-50'
+                        : 'border-orange-600 bg-orange-900/20'
+                      : theme === 'light'
+                        ? 'border-gray-300 bg-white'
+                        : 'border-gray-600 bg-black'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <span className={`font-bold text-lg w-6 ${
                         theme === 'light' ? 'text-black' : 'text-white'
-                      }`}>{user.name}</span>
-                      {userIsActive && (
-                        <span className={`px-2 py-1 text-xs rounded-full animate-pulse ${
-                          theme === 'light'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-green-600 text-white'
-                        }`}>
-                          نشط
-                        </span>
-                      )}
+                      }`}>{user.rank}</span>
+                      <span className="text-lg">{user.avatar || '👤'}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`font-medium ${
+                          theme === 'light' ? 'text-black' : 'text-white'
+                        }`}>{user.name}</span>
+                        {userIsActive && (
+                          <span className={`px-2 py-1 text-xs rounded-full animate-pulse ${
+                            theme === 'light'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-green-600 text-white'
+                          }`}>
+                            نشط
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    <span className={`font-bold ${
+                      theme === 'light' ? 'text-black' : 'text-white'
+                    }`}>{user.score}</span>
                   </div>
-                  <span className={`font-bold ${
-                    theme === 'light' ? 'text-black' : 'text-white'
-                  }`}>{user.score}</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className={`p-2 rounded ${
-                    theme === 'light' ? 'bg-blue-50' : 'bg-blue-900/20'
-                  }`}>
-                    <div className={`font-semibold ${
-                      theme === 'light' ? 'text-blue-700' : 'text-blue-300'
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className={`p-2 rounded ${
+                      theme === 'light' ? 'bg-blue-50' : 'bg-blue-900/20'
                     }`}>
-                      {todayTimeFormatted}
+                      <div className={`font-semibold ${
+                        theme === 'light' ? 'text-blue-700' : 'text-blue-300'
+                      }`}>
+                        {todayTimeFormatted}
+                      </div>
+                      <div className={
+                        theme === 'light' ? 'text-blue-600' : 'text-blue-400'
+                      }>
+                        اليوم
+                      </div>
                     </div>
-                    <div className={
-                      theme === 'light' ? 'text-blue-600' : 'text-blue-400'
-                    }>
-                      اليوم
-                    </div>
-                  </div>
-                  <div className={`p-2 rounded ${
-                    theme === 'light' ? 'bg-yellow-50' : 'bg-yellow-900/20'
-                  }`}>
-                    <div className={`font-semibold ${
-                      theme === 'light' ? 'text-yellow-700' : 'text-yellow-300'
+                    <div className={`p-2 rounded ${
+                      theme === 'light' ? 'bg-yellow-50' : 'bg-yellow-900/20'
                     }`}>
-                      +{todayCoins} عملة
-                    </div>
-                    <div className={
-                      theme === 'light' ? 'text-yellow-600' : 'text-yellow-400'
-                    }>
-                      اليوم
+                      <div className={`font-semibold ${
+                        theme === 'light' ? 'text-yellow-700' : 'text-yellow-300'
+                      }`}>
+                        +{todayCoins} عملة
+                      </div>
+                      <div className={
+                        theme === 'light' ? 'text-yellow-600' : 'text-yellow-400'
+                      }>
+                        اليوم
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

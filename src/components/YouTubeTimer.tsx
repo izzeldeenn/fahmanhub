@@ -96,7 +96,9 @@ export function YouTubeTimer() {
   const embedUrl = videoId ? getEmbedUrl(videoId) : '';
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className={`relative w-full h-full overflow-hidden ${
+      theme === 'dark' ? 'border-4 border-white' : ''
+    }`}>
       {/* Full Screen Video */}
       {showVideo && videoId && (
         <div className="absolute inset-0">

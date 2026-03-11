@@ -39,12 +39,12 @@ export function TimerSelector() {
     <div className="w-full h-full flex flex-col">
       {/* Timer Type Selector */}
       <div className="mb-8">
-        <div className="flex justify-center items-center gap-8">
+        <div className="flex justify-center items-center gap-4">
           {timerButtons.map((button) => (
             <button
               key={button.type}
               onClick={() => setActiveTimer(button.type)}
-              className={`px-6 py-3 border-2 rounded-lg font-semibold transition-all duration-200 ${
+              className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 text-sm ${
                 activeTimer === button.type
                   ? theme === 'light'
                     ? 'border-black bg-black text-white'
