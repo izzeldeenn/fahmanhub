@@ -45,18 +45,45 @@ export function UserProvider({ children }: { children: ReactNode }) {
       try {
         const parsedUsers = JSON.parse(savedUsers);
         setUsers(parsedUsers);
-        
-        // Check if current device exists, if not create it
-        const existingDevice = parsedUsers.find((user: DeviceUser) => user.deviceId === deviceId);
-        if (!existingDevice) {
-          createDeviceUser(deviceId);
-        }
       } catch (error) {
         console.error('Error loading users:', error);
-        createDeviceUser(deviceId);
       }
     } else {
-      createDeviceUser(deviceId);
+      // Create demo devices for testing
+      const demoDevices: DeviceUser[] = [
+        {
+          deviceId: 'demo-1',
+          name: 'جهاز احمد',
+          avatar: '💻',
+          score: 850,
+          rank: 1,
+          studyTime: 7200, // 2 hours
+          createdAt: new Date().toISOString(),
+          lastActive: new Date().toISOString()
+        },
+        {
+          deviceId: 'demo-2', 
+          name: 'جهاز محمد',
+          avatar: '📱',
+          score: 650,
+          rank: 2,
+          studyTime: 5400, // 1.5 hours
+          createdAt: new Date().toISOString(),
+          lastActive: new Date(Date.now() - 30 * 60 * 1000).toISOString() // 30 minutes ago
+        },
+        {
+          deviceId: 'demo-3',
+          name: 'جهاز فاطمة',
+          avatar: '🎮',
+          score: 420,
+          rank: 3,
+          studyTime: 3600, // 1 hour
+          createdAt: new Date().toISOString(),
+          lastActive: new Date(Date.now() - 60 * 60 * 1000).toISOString() // 1 hour ago
+        }
+      ];
+      setUsers(demoDevices);
+      createDeviceUser(deviceId); // Also create current device
     }
   }, []);
 
