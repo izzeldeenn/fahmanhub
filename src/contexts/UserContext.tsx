@@ -4,12 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getDeviceId, getDeviceInfo } from '@/utils/deviceId';
 import { useGamification } from '@/contexts/GamificationContext';
 import { createClient } from '@supabase/supabase-js';
-// import { supabase } from '@/lib/supabase'; // Future database integration
-
-const supabaseUrl = 'https://czyytoahcjntfsovwqho.supabase.co';
-const supabaseKey = 'sb_publishable_OU8bwDURR2L2zMsKeshkiw_14NJsSh3';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '@/lib/supabase';
 
 interface DeviceUser {
   deviceId: string;
@@ -42,83 +37,167 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   useEffect(() => {
-    // Get device ID and load users
+    // Get device ID
     const deviceId = getDeviceId();
     setCurrentDeviceId(deviceId);
     
-    // Load users from localStorage
-    const savedUsers = localStorage.getItem('fahman_hub_device_users');
-    if (savedUsers) {
-      try {
-        const parsedUsers = JSON.parse(savedUsers);
-        setUsers(parsedUsers);
-      } catch (error) {
-        console.error('Error loading users:', error);
-      }
-    } else {
-      // Create demo devices for testing
-      const demoDevices: DeviceUser[] = [
-        {
-          deviceId: 'demo-1',
-          name: 'جهاز احمد',
-          avatar: '💻',
-          score: 850,
-          rank: 1,
-          studyTime: 7200, // 2 hours
-          createdAt: new Date().toISOString(),
-          lastActive: new Date().toISOString()
-        },
-        {
-          deviceId: 'demo-2', 
-          name: 'جهاز محمد',
-          avatar: '📱',
-          score: 650,
-          rank: 2,
-          studyTime: 5400, // 1.5 hours
-          createdAt: new Date().toISOString(),
-          lastActive: new Date(Date.now() - 30 * 60 * 1000).toISOString() // 30 minutes ago
-        },
-        {
-          deviceId: 'demo-3',
-          name: 'جهاز فاطمة',
-          avatar: '🎮',
-          score: 420,
-          rank: 3,
-          studyTime: 3600, // 1 hour
-          createdAt: new Date().toISOString(),
-          lastActive: new Date(Date.now() - 60 * 60 * 1000).toISOString() // 1 hour ago
+    // Load users from Supabase
+    loadUsersFromDatabase();
+    
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('devices')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'devices' },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          loadUsersFromDatabase();
         }
-      ];
-      setUsers(demoDevices);
-      createDeviceUser(deviceId); // Also create current device
-    }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    // Save users to localStorage whenever they change
-    localStorage.setItem('fahman_hub_device_users', JSON.stringify(users));
-  }, [users]);
+  const loadUsersFromDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('devices')
+        .select('*')
+        .order('score', { ascending: false });
 
-  const createDeviceUser = (deviceId: string) => {
-    const deviceInfo = getDeviceInfo();
-    const newUser: DeviceUser = {
+      if (error) {
+        console.error('Error loading devices:', error);
+        // Fallback to demo devices if database fails
+        loadDemoDevices();
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const deviceUsers: DeviceUser[] = data.map((dbDevice: any) => ({
+          deviceId: dbDevice.id,
+          name: dbDevice.name,
+          avatar: dbDevice.avatar || '🖥️',
+          score: dbDevice.score,
+          rank: dbDevice.rank,
+          studyTime: dbDevice.study_time,
+          createdAt: dbDevice.created_at,
+          lastActive: dbDevice.last_active
+        }));
+        setUsers(deviceUsers);
+      } else {
+        // No devices in database, create demo devices
+        loadDemoDevices();
+      }
+    } catch (error) {
+      console.error('Database error:', error);
+      loadDemoDevices();
+    }
+  };
+
+  const loadDemoDevices = async () => {
+    const demoDevices: DeviceUser[] = [
+      {
+        deviceId: 'demo-1',
+        name: 'جهاز احمد',
+        avatar: '💻',
+        score: 850,
+        rank: 1,
+        studyTime: 7200, // 2 hours
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString()
+      },
+      {
+        deviceId: 'demo-2', 
+        name: 'جهاز محمد',
+        avatar: '📱',
+        score: 750,
+        rank: 2,
+        studyTime: 5400, // 1.5 hours
+        createdAt: new Date().toISOString(),
+        lastActive: new Date(Date.now() - 30 * 60 * 1000).toISOString() // 30 minutes ago
+      },
+      {
+        deviceId: 'demo-3',
+        name: 'جهاز فاطمة',
+        avatar: '🎮',
+        score: 420,
+        rank: 3,
+        studyTime: 3600, // 1 hour
+        createdAt: new Date().toISOString(),
+        lastActive: new Date(Date.now() - 60 * 60 * 1000).toISOString() // 1 hour ago
+      }
+    ];
+    
+    // Save demo devices to database
+    for (const device of demoDevices) {
+      await saveDeviceToDatabase(device);
+    }
+    
+    // Also create current device
+    const deviceId = getDeviceId();
+    const currentDevice: DeviceUser = {
       deviceId,
       name: `جهاز ${deviceId.slice(-6)}`,
+      avatar: '🖥️',
       score: 0,
-      rank: users.length + 1,
+      rank: 4,
       studyTime: 0,
-      createdAt: deviceInfo.createdAt,
+      createdAt: new Date().toISOString(),
       lastActive: new Date().toISOString()
     };
-    setUsers(prev => {
-      const updated = [...prev, newUser];
-      // Sort and update ranks
-      updated.sort((a, b) => b.score - a.score);
-      updated.forEach((user, index) => {
-        user.rank = index + 1;
-      });
-      return updated;
-    });
+    await saveDeviceToDatabase(currentDevice);
+    
+    setUsers([...demoDevices, currentDevice]);
+  };
+
+  const saveDeviceToDatabase = async (device: DeviceUser) => {
+    try {
+      const { error } = await supabase
+        .from('devices')
+        .upsert({
+          id: device.deviceId,
+          name: device.name,
+          avatar: device.avatar,
+          score: device.score,
+          rank: device.rank,
+          study_time: device.studyTime,
+          created_at: device.createdAt,
+          last_active: device.lastActive,
+          device_info: getDeviceInfo()
+        });
+
+      if (error) {
+        console.error('Error saving device:', error);
+      }
+    } catch (error) {
+      console.error('Database save error:', error);
+    }
+  };
+
+  const updateDeviceInDatabase = async (deviceId: string, updates: Partial<DeviceUser>) => {
+    try {
+      const { error } = await supabase
+        .from('devices')
+        .update({
+          ...updates,
+          last_active: new Date().toISOString()
+        })
+        .eq('id', deviceId);
+
+      if (error) {
+        console.error('Error updating device:', error);
+      }
+    } catch (error) {
+      console.error('Database update error:', error);
+    }
+  };
+
+  const getCurrentDeviceUser = (): DeviceUser | null => {
+    if (!currentDeviceId) return null;
+    return users.find(user => user.deviceId === currentDeviceId) || null;
   };
 
   const updateDeviceUserName = (name: string) => {
@@ -133,6 +212,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
       return newUsers;
     });
+    
+    // Update in database
+    updateDeviceInDatabase(currentDeviceId, { name });
   };
 
   const updateDeviceUserAvatar = (avatar: string) => {
@@ -147,6 +229,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
       return newUsers;
     });
+    
+    // Update in database
+    updateDeviceInDatabase(currentDeviceId, { avatar });
   };
 
   const updateDeviceStudyTime = (additionalTime: number) => {
@@ -157,6 +242,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (user.deviceId === currentDeviceId) {
           const pointsEarned = Math.floor(additionalTime / 10); // 1 point per 10 seconds
           addCoins(pointsEarned); // Add coins to gamification system
+          
           return {
             ...user,
             studyTime: user.studyTime + additionalTime,
@@ -175,11 +261,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       return newUsers;
     });
-  };
-
-  const getCurrentDeviceUser = (): DeviceUser | null => {
-    if (!currentDeviceId) return null;
-    return users.find(user => user.deviceId === currentDeviceId) || null;
+    
+    // Update in database
+    const currentUser = users.find(u => u.deviceId === currentDeviceId);
+    if (currentUser) {
+      updateDeviceInDatabase(currentDeviceId, {
+        studyTime: currentUser.studyTime + additionalTime,
+        score: currentUser.score + Math.floor(additionalTime / 10)
+      });
+    }
   };
 
   const getAllDeviceUsers = (): DeviceUser[] => {
