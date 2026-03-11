@@ -4,13 +4,6 @@ import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useGamification } from '@/contexts/GamificationContext';
 
-interface Task {
-  id: string;
-  title: string;
-  points: number;
-  completed: boolean;
-}
-
 export function CoinsButton() {
   const { theme } = useTheme();
   const { coins, tasks } = useGamification();
