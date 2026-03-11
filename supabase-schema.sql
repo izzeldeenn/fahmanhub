@@ -16,15 +16,6 @@ CREATE INDEX IF NOT EXISTS idx_devices_score ON devices(score DESC);
 CREATE INDEX IF NOT EXISTS idx_devices_rank ON devices(rank ASC);
 CREATE INDEX IF NOT EXISTS idx_devices_last_active ON devices(last_active DESC);
 
--- Enable Row Level Security (RLS)
-ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
-
--- Create policy to allow all operations
-CREATE POLICY "Enable all operations for devices" ON devices
-  FOR ALL USING auth.jwt()
-  TO authenticated
-  WITH CHECK (true);
-
 -- Insert demo devices
 INSERT INTO devices (id, name, avatar, score, rank, study_time, created_at, last_active) VALUES
   ('demo-1', 'جهاز احمد', '💻', 850, 1, 7200, NOW(), NOW()),
