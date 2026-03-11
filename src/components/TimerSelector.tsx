@@ -5,8 +5,9 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
 import { CountdownTimer } from './CountdownTimer';
+import { YouTubeTimer } from './YouTubeTimer';
 
-type TimerType = 'stopwatch' | 'pomodoro' | 'countdown';
+type TimerType = 'stopwatch' | 'pomodoro' | 'countdown' | 'youtube';
 
 export function TimerSelector() {
   const { theme } = useTheme();
@@ -20,6 +21,8 @@ export function TimerSelector() {
         return <PomodoroTimer />;
       case 'countdown':
         return <CountdownTimer />;
+      case 'youtube':
+        return <YouTubeTimer />;
       default:
         return <Timer />;
     }
@@ -28,7 +31,8 @@ export function TimerSelector() {
   const timerButtons = [
     { type: 'stopwatch' as TimerType, label: 'ساعة إيقاف' },
     { type: 'pomodoro' as TimerType, label: 'بومودورو' },
-    { type: 'countdown' as TimerType, label: 'عد تنازلي' }
+    { type: 'countdown' as TimerType, label: 'عد تنازلي' },
+    { type: 'youtube' as TimerType, label: 'مؤقت يوتيوب' }
   ];
 
   return (
@@ -40,7 +44,7 @@ export function TimerSelector() {
             <button
               key={button.type}
               onClick={() => setActiveTimer(button.type)}
-              className={`px-8 py-3 border-2 rounded-lg font-semibold transition-all duration-200 ${
+              className={`px-6 py-3 border-2 rounded-lg font-semibold transition-all duration-200 ${
                 activeTimer === button.type
                   ? theme === 'light'
                     ? 'border-black bg-black text-white'
