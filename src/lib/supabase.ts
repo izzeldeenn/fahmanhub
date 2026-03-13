@@ -151,13 +151,22 @@ export class UserAccountDB {
   // Update user profile
   async updateUserProfile(accountId: string, username: string, avatar?: string): Promise<UserAccount | null> {
     try {
+      // Build update object dynamically
+      const updateData: any = {
+        last_active: new Date().toISOString()
+      };
+      
+      if (username) {
+        updateData.username = username;
+      }
+      
+      if (avatar !== undefined) {
+        updateData.avatar = avatar;
+      }
+      
       const { data, error } = await supabase
         .from('users')
-        .update({
-          username: username,
-          avatar: avatar,
-          last_active: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('account_id', accountId)
         .select()
         .single();

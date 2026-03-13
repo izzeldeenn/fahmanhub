@@ -98,6 +98,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
               lastActive: dbUser.last_active
             }));
             console.log('📊 Mapped users to frontend format:', userAccounts.length);
+            
+            // Always preserve current user local changes
+            const currentUser = users.find(u => u.accountId === currentAccountId);
+            if (currentUser) {
+              const updatedCurrentUser = userAccounts.find(u => u.accountId === currentAccountId);
+              if (updatedCurrentUser) {
+                // Always keep local username and avatar for current user
+                updatedCurrentUser.username = currentUser.username;
+                updatedCurrentUser.avatar = currentUser.avatar;
+                updatedCurrentUser.lastActive = currentUser.lastActive;
+              }
+            }
+            
             setUsers(userAccounts);
           });
           console.log('✅ Real-time subscription established');
@@ -260,7 +273,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return newUsers;
     });
     
-    // Update in PocketBase if available
+    // Update in Supabase immediately to ensure consistency
     isSupabaseAvailable().then(available => {
       if (available) {
         userDB.updateUserProfile(currentAccountId, name).catch((error: any) => {
@@ -283,17 +296,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return newUsers;
     });
     
-    // Update in PocketBase if available
-    const currentUser = users.find(u => u.accountId === currentAccountId);
-    if (currentUser) {
-      isSupabaseAvailable().then(available => {
-        if (available) {
-          userDB.updateUserProfile(currentAccountId, currentUser.username, avatar).catch((error: any) => {
-            console.error('Error updating avatar:', error);
-          });
-        }
-      });
-    }
+    // Update in Supabase immediately to ensure consistency
+    isSupabaseAvailable().then(available => {
+      if (available) {
+        // Only update avatar, don't touch username
+        userDB.updateUserProfile(currentAccountId, '', avatar).catch((error: any) => {
+          console.error('Error updating avatar:', error);
+        });
+      }
+    });
   };
 
   const updateUserStudyTime = async (additionalTime: number) => {
