@@ -1,4 +1,4 @@
-# 🐸 Frogo - Focus, Rise, Organize, Grow, Overcome
+# <img src="public/mr_frogo.png" alt="Mr Frogo" width="30"> Frogo - Focus, Rise, Organize, Grow, Overcome
 
 A smart study time management platform inspired by the wisdom of Mr. Frogo.
 
