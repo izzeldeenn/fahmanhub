@@ -6,6 +6,255 @@ import { useGamification } from '@/contexts/GamificationContext';
 import { formatStudyTime } from '@/utils/timeFormat';
 import { userDB, isSupabaseAvailable, UserAccount, UserAccountFrontend } from '@/lib/supabase';
 
+// Virtual Users System
+const ARABIC_NAMES = [
+  'أحمد محمد', 'فاطمة علي', 'عبدالله خالد', 'مريم سالم', 'خالد عمر',
+  'نورا حسن', 'يوسف إبراهيم', 'سارة محمود', 'عمر عبدالرحمن', 'ليلى أحمد',
+  'محمد سعيد', 'زينب عادل', 'حسن راشد', 'أمل خالد', 'باسل ياسر',
+  'رنا ماجد', 'طارق حسين', 'داليا سامي', 'فيصل ناصر', 'هند محسن'
+];
+
+const ENGLISH_NAMES = [
+  'John Smith', 'Emma Johnson', 'Michael Brown', 'Sarah Davis', 'David Wilson',
+  'Lisa Anderson', 'James Taylor', 'Jennifer Thomas', 'Robert Jackson', 'Maria Garcia',
+  'William Martinez', 'Linda Rodriguez', 'Richard Lee', 'Patricia White', 'Charles Harris',
+  'Barbara Clark', 'Joseph Lewis', 'Susan Walker', 'Thomas Hall', 'Jessica Allen'
+];
+
+const AVATAR_EMOJIS = ['👨‍💻', '👩‍💻', '🧑‍🎓', '👨‍🎓', '👩‍🎓', '🧑‍💼', '👨‍💼', '👩‍💼', '🧑‍🔬', '👨‍🔬', '👩‍🔬', '🧑‍🏫', '👨‍🏫', '👩‍🏫', '🧑‍⚕️', '👨‍⚕️', '👩‍⚕️'];
+
+interface VirtualUser {
+  id: string;
+  username: string;
+  avatar: string;
+  studyTime: number;
+  isActive: boolean;
+  lastStudyTime: number;
+  studyPattern: 'consistent' | 'burst' | 'irregular';
+  nextStudyTime: number;
+  studyDuration: number;
+}
+
+class VirtualUsersManager {
+  private virtualUsers: VirtualUser[] = [];
+  private intervalId: NodeJS.Timeout | null = null;
+  private currentRealUsers: UserAccountFrontend[] = [];
+  private static instance: VirtualUsersManager | null = null;
+  private readonly STORAGE_KEY = 'fahman-hub-virtual-users-state';
+
+  public static getInstance(): VirtualUsersManager {
+    if (!VirtualUsersManager.instance) {
+      VirtualUsersManager.instance = new VirtualUsersManager();
+    }
+    return VirtualUsersManager.instance;
+  }
+
+  private constructor() {
+    this.initializeVirtualUsers();
+    this.startVirtualUserSimulation();
+  }
+
+  private initializeVirtualUsers() {
+    const allNames = [...ARABIC_NAMES, ...ENGLISH_NAMES];
+    const totalVirtualUsers = Math.min(15, Math.floor(Math.random() * 8) + 8); // 8-15 virtual users
+    
+    // Use fixed seed for consistent virtual users across all clients
+    const seed = 'fahman-hub-virtual-users-2024';
+    let randomIndex = 0;
+    
+    const seededRandom = () => {
+      const x = Math.sin(seed.charCodeAt(randomIndex++) + randomIndex * 12.9898) * 43758.5453;
+      return x - Math.floor(x);
+    };
+    
+    const now = Date.now();
+    
+    // Try to load saved state from localStorage
+    const savedState = this.loadVirtualUsersState();
+    
+    if (savedState && savedState.length > 0) {
+      // Load from saved state
+      this.virtualUsers = savedState.map((savedUser, index) => ({
+        id: savedUser.id || `virtual-${index + 1}`,
+        username: savedUser.username || 'Unknown User',
+        avatar: savedUser.avatar || '👤',
+        studyTime: savedUser.studyTime || 1800,
+        isActive: false,
+        lastStudyTime: savedUser.lastStudyTime || Date.now() - 3600000,
+        studyPattern: savedUser.studyPattern || 'consistent',
+        nextStudyTime: now + Math.floor(seededRandom() * 3600000), // Reset next study time
+        studyDuration: this.getStudyDuration(savedUser.studyPattern || 'consistent')
+      }));
+    } else {
+      // Create new virtual users
+      this.virtualUsers = Array.from({ length: totalVirtualUsers }, (_, index) => {
+        const nameIndex = Math.floor(seededRandom() * allNames.length);
+        const name = allNames[nameIndex];
+        const avatar = AVATAR_EMOJIS[index % AVATAR_EMOJIS.length];
+        const patterns: ('consistent' | 'burst' | 'irregular')[] = ['consistent', 'burst', 'irregular'];
+        const studyPattern = patterns[index % patterns.length];
+        
+        return {
+          id: `virtual-${index + 1}`,
+          username: name,
+          avatar,
+          studyTime: Math.floor(seededRandom() * 7200) + 1800, // 30 mins to 2.5 hours initial
+          isActive: false,
+          lastStudyTime: now - Math.floor(seededRandom() * 86400000), // Random time in last 24h
+          studyPattern,
+          nextStudyTime: now + Math.floor(seededRandom() * 3600000), // Next study within 1 hour
+          studyDuration: this.getStudyDuration(studyPattern)
+        };
+      });
+    }
+  }
+
+  private loadVirtualUsersState(): Partial<VirtualUser>[] | null {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(this.STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Check if saved data is not too old (older than 7 days)
+          const saveTime = parsed.timestamp || 0;
+          const now = Date.now();
+          if (now - saveTime < 7 * 24 * 60 * 60 * 1000) { // 7 days
+            return parsed.users || [];
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load virtual users state:', error);
+    }
+    return null;
+  }
+
+  private saveVirtualUsersState() {
+    try {
+      if (typeof window !== 'undefined') {
+        const stateToSave = {
+          timestamp: Date.now(),
+          users: this.virtualUsers.map(user => ({
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar,
+            studyTime: user.studyTime,
+            lastStudyTime: user.lastStudyTime,
+            studyPattern: user.studyPattern
+          }))
+        };
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stateToSave));
+      }
+    } catch (error) {
+      console.warn('Failed to save virtual users state:', error);
+    }
+  }
+
+  private getStudyDuration(pattern: 'consistent' | 'burst' | 'irregular'): number {
+    switch (pattern) {
+      case 'consistent':
+        return 1800000 + Math.random() * 1800000; // 30-60 mins
+      case 'burst':
+        return 300000 + Math.random() * 900000; // 5-20 mins
+      case 'irregular':
+        return 600000 + Math.random() * 2400000; // 10-50 mins
+      default:
+        return 1800000;
+    }
+  }
+
+  private startVirtualUserSimulation() {
+    if (this.intervalId) return;
+
+    this.intervalId = setInterval(() => {
+      this.updateVirtualUsers();
+    }, 5000); // Update every 5 seconds
+    
+    // Save state periodically (every minute)
+    setInterval(() => {
+      this.saveVirtualUsersState();
+    }, 60000);
+  }
+
+  private updateVirtualUsers() {
+    const now = Date.now();
+    
+    this.virtualUsers.forEach(user => {
+      // Check if user should start studying
+      if (!user.isActive && now >= user.nextStudyTime) {
+        user.isActive = true;
+        user.lastStudyTime = now;
+        
+        // Schedule next study session
+        user.nextStudyTime = now + user.studyDuration + (Math.random() * 3600000 * 4); // 0-4 hours break
+      }
+      // Check if user should stop studying
+      else if (user.isActive && (now - user.lastStudyTime) >= user.studyDuration) {
+        user.isActive = false;
+        user.studyTime += user.studyDuration / 1000; // Convert to seconds
+        
+        // Update study duration for next session
+        user.studyDuration = this.getStudyDuration(user.studyPattern);
+        
+        // Save state after significant changes
+        this.saveVirtualUsersState();
+      }
+      // If user is currently studying, add time gradually
+      else if (user.isActive) {
+        const timeToAdd = 5; // 5 seconds per update
+        user.studyTime += timeToAdd;
+        user.lastStudyTime = now; // Keep lastStudyTime updated
+      }
+    });
+  }
+
+  public getVirtualUsers(): UserAccountFrontend[] {
+    const now = Date.now();
+    return this.virtualUsers.map(user => ({
+      id: user.id,
+      accountId: user.id,
+      username: user.username,
+      email: '',
+      hashKey: '',
+      avatar: user.avatar,
+      score: Math.floor(user.studyTime / 600), // 1 point per 10 minutes
+      rank: 0, // Will be calculated later
+      studyTime: user.studyTime,
+      studyTimeFormatted: formatStudyTime(user.studyTime),
+      createdAt: new Date(now - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random within last 30 days
+      lastActive: new Date(typeof user.lastStudyTime === 'number' && user.lastStudyTime > 0 ? user.lastStudyTime : now - 3600000).toISOString() // Fallback to 1 hour ago if invalid
+    }));
+  }
+
+  public isVirtualUser(accountId: string): boolean {
+    return accountId.startsWith('virtual-');
+  }
+
+  public updateRealUsers(users: UserAccountFrontend[]) {
+    this.currentRealUsers = users;
+  }
+
+  public getAllUsers(): UserAccountFrontend[] {
+    const virtualUsers = this.getVirtualUsers();
+    const allUsers = [...this.currentRealUsers, ...virtualUsers];
+    
+    // Sort by study time and assign ranks
+    allUsers.sort((a, b) => b.studyTime - a.studyTime);
+    allUsers.forEach((user, index) => {
+      user.rank = index + 1;
+    });
+    
+    return allUsers;
+  }
+
+  public destroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+}
+
 // Convert Supabase DB format to frontend format
 const convertToUserAccountFrontend = (dbUser: UserAccount): UserAccountFrontend => ({
   id: dbUser.id,
@@ -49,6 +298,7 @@ interface UserContextType {
   updateUserScore: (additionalScore: number) => void;
   setTimerActive: (active: boolean) => void;
   isTimerActive: () => boolean;
+  isVirtualUser: (accountId: string) => boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -60,6 +310,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   
   const dbSyncAccumulator = useRef(0);
+  // Use singleton pattern - get the existing instance or create new one
+  const virtualUsersManager = VirtualUsersManager.getInstance();
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -99,6 +351,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
             }));
             console.log('📊 Mapped users to frontend format:', userAccounts.length);
             
+            // Update virtual users manager with real users
+            virtualUsersManager.updateRealUsers(userAccounts);
+            
             // Always preserve current user local changes
             const currentUser = users.find(u => u.accountId === currentAccountId);
             if (currentUser) {
@@ -130,6 +385,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Cleanup subscription on unmount
     return () => {
       userDB.unsubscribeFromUsers();
+      virtualUsersManager.destroy();
     };
   }, []);
 
@@ -381,10 +637,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const getAllDeviceUsers = (): UserAccountFrontend[] => {
-    return users.map(user => ({
+    // Update virtual users manager with current real users
+    virtualUsersManager.updateRealUsers(users);
+    
+    // Get all users including virtual ones
+    const allUsers = virtualUsersManager.getAllUsers() || users;
+    
+    return allUsers.map(user => ({
       ...user,
       studyTimeFormatted: formatStudyTime(user.studyTime)
-    })).sort((a, b) => b.score - a.score);
+    }));
+  };
+
+  const isVirtualUser = (accountId: string): boolean => {
+    return virtualUsersManager.isVirtualUser(accountId);
   };
 
   const setTimerActive = (isActive: boolean) => {
@@ -407,7 +673,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       updateUserStudyTime,
       updateUserScore,
       setTimerActive,
-      isTimerActive
+      isTimerActive,
+      isVirtualUser
     }}>
       {children}
     </UserContext.Provider>

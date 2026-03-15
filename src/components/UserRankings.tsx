@@ -22,31 +22,23 @@ interface UserAccount {
 export function UserRankings() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { users, isTimerActive, getCurrentUser } = useUser();
+  const { users, isTimerActive, getCurrentUser, getAllDeviceUsers, isVirtualUser } = useUser();
   const customTheme = useCustomThemeClasses();
   const [displayUsers, setDisplayUsers] = useState<UserAccount[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    // Sort users by study time (highest to lowest) and update ranks
-    const sortedUsers = [...users].sort((a, b) => b.studyTime - a.studyTime);
-    const rankedUsers = sortedUsers.map((user, index) => ({
-      ...user,
-      rank: index + 1
-    }));
-    setDisplayUsers(rankedUsers);
+    // Get all users including virtual ones
+    const allUsers = getAllDeviceUsers();
+    setDisplayUsers(allUsers);
   }, [users]);
 
   useEffect(() => {
     // Update rankings every second for live changes
     const interval = setInterval(() => {
-      // Sort users by study time (highest to lowest) and update ranks
-      const sortedUsers = [...users].sort((a, b) => b.studyTime - a.studyTime);
-      const rankedUsers = sortedUsers.map((user, index) => ({
-        ...user,
-        rank: index + 1
-      }));
-      setDisplayUsers(rankedUsers);
+      // Get all users including virtual ones
+      const allUsers = getAllDeviceUsers();
+      setDisplayUsers(allUsers);
       setCurrentTime(new Date());
     }, 1000);
 
